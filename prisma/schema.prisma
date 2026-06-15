@@ -1,0 +1,518 @@
+datasource db {
+  provider  = "postgresql"
+  url       = env("NEON_DATABASE_URL")
+  directUrl = env("NEON_DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum UserRole {
+  ADMIN
+  MANAGER
+  OPERATOR
+  AUDITOR
+  VIEWER
+}
+
+enum ContainerSize {
+  DV20
+  DV40
+  HC40
+  HC45
+  RF20
+  RF40
+  RH40
+  OT20
+  OT40
+  FR20
+  FR40
+  TK20
+  OTHER
+}
+
+enum ContainerStatus {
+  AVAILABLE
+  RESERVED
+  GATE_IN
+  GATE_OUT
+  LOADED
+  DISCHARGED
+  HELD
+  DAMAGED
+  REPAIRED
+  OUT_OF_SERVICE
+}
+
+enum EirMode {
+  IN
+  OUT
+}
+
+enum EirStatus {
+  DRAFT
+  PENDING
+  GATE_IN
+  GATE_OUT
+  LOADED
+  DELIVERED
+  CANCELLED
+}
+
+enum EirCondition {
+  GOOD
+  DAMAGED
+  REPAIRED
+  UNKNOWN
+}
+
+enum LpType {
+  LOAD
+  DISCHARGE
+}
+
+enum SurveyStatus {
+  PENDING
+  COMPLETED
+  CANCELLED
+}
+
+enum SurveyCondition {
+  GOOD
+  DAMAGED
+  REPAIRED
+  UNKNOWN
+}
+
+enum TariffEventType {
+  GATE_IN
+  GATE_OUT
+  LOAD
+  DISCHARGE
+  STORAGE
+  REPAIR
+  SURVEY
+}
+
+enum TariffChargeType {
+  FLAT
+  PER_DAY
+  PER_CONTAINER
+  PER_TON
+  PERCENTAGE
+}
+
+enum CodecoStatus {
+  PENDING
+  SENT
+  FAILED
+  CANCELLED
+}
+
+enum EdiUploadType {
+  CODECO
+  BAPLIE
+  COPRAR
+  MANIFEST
+  OTHER
+}
+
+enum EdiUploadStatus {
+  UPLOADED
+  PROCESSING
+  PROCESSED
+  FAILED
+}
+
+model User {
+  id           String    @id @default(uuid()) @db.Uuid
+  username     String    @unique
+  email        String    @unique
+  passwordHash String
+  role         UserRole  @default(OPERATOR)
+  yardId       String?   @db.Uuid
+  isActive     Boolean   @default(true)
+  lastLogin    DateTime?
+  createdAt    DateTime  @default(now())
+
+  yard                     Yard?            @relation(fields: [yardId], references: [id], onDelete: SetNull)
+  eirRecordsCreatedBy      EirRecord[]      @relation("EirRecordCreatedBy")
+  eirRecordsAmendedBy      EirRecord[]      @relation("EirRecordAmendedBy")
+  loadingProgramsCreatedBy LoadingProgram[] @relation("LoadingProgramCreatedBy")
+  loadingProgramsAmendedBy LoadingProgram[] @relation("LoadingProgramAmendedBy")
+  blockContainersCreatedBy BlockContainer[] @relation("BlockContainerCreatedBy")
+  blockContainersAllowedBy BlockContainer[] @relation("BlockContainerAllowedBy")
+  blockContainersAmendedBy BlockContainer[] @relation("BlockContainerAmendedBy")
+  surveys                  Survey[]
+  containerPhotos          ContainerPhoto[]
+  ediUploads               EdiUpload[]
+  auditLogs                AuditLog[]
+
+  @@index([yardId, role, isActive])
+  @@index([email])
+}
+
+model Yard {
+  id       String  @id @default(uuid()) @db.Uuid
+  name     String
+  code     String  @unique
+  location String?
+  isActive Boolean @default(true)
+
+  users           User[]
+  containers      Container[]
+  eirRecords      EirRecord[]
+  loadingPrograms LoadingProgram[]
+  blockContainers BlockContainer[]
+  surveys         Survey[]
+  tariffs         Tariff[]
+  ediUploads      EdiUpload[]
+
+  @@index([code, isActive])
+}
+
+model ShippingLine {
+  id          String  @id @default(uuid()) @db.Uuid
+  name        String
+  scacCode    String  @unique
+  codeCoEmail String?
+  isActive    Boolean @default(true)
+
+  containers      Container[]
+  eirRecords      EirRecord[]
+  loadingPrograms LoadingProgram[]
+  blockContainers BlockContainer[]
+  tariffs         Tariff[]
+  codecoLogs      CodecoLog[]
+  ediUploads      EdiUpload[]
+
+  @@index([scacCode, isActive])
+  @@index([codeCoEmail])
+}
+
+model Terminal {
+  id       String  @id @default(uuid()) @db.Uuid
+  name     String
+  code     String  @unique
+  location String?
+
+  eirRecords      EirRecord[]
+  loadingPrograms LoadingProgram[]
+
+  @@index([code])
+}
+
+model Port {
+  id       String  @id @default(uuid()) @db.Uuid
+  name     String
+  unLocode String  @unique
+  country  String?
+
+  loadingProgramsAsLoading   LoadingProgram[] @relation("LoadingPort")
+  loadingProgramsAsDischarge LoadingProgram[] @relation("DischargePort")
+  loadingProgramsAsFinalDest LoadingProgram[] @relation("FinalDestinationPort")
+
+  @@index([unLocode, country])
+}
+
+model Container {
+  id          String          @id @default(uuid()) @db.Uuid
+  containerNo String          @unique
+  size        ContainerSize
+  lineId      String          @db.Uuid
+  tareWt      Decimal         @db.Decimal(10, 2)
+  status      ContainerStatus @default(AVAILABLE)
+  yardId      String          @db.Uuid
+  isInYard    Boolean         @default(false)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  line            ShippingLine     @relation(fields: [lineId], references: [id], onDelete: Restrict)
+  yard            Yard             @relation(fields: [yardId], references: [id], onDelete: Restrict)
+  eirRecords      EirRecord[]
+  blockContainers BlockContainer[]
+  surveys         Survey[]
+  photos          ContainerPhoto[]
+
+  @@index([yardId, lineId, status, isInYard])
+  @@index([yardId, size, status])
+  @@index([containerNo])
+}
+
+model EirRecord {
+  id            String        @id @default(uuid()) @db.Uuid
+  eirNo         String        @unique
+  sequence      Int           @default(1)
+  containerId   String        @db.Uuid
+  containerNo   String
+  mode          EirMode
+  lineId        String        @db.Uuid
+  yardId        String        @db.Uuid
+  terminalId    String?       @db.Uuid
+  gateDate      DateTime?
+  truckNo       String?
+  vessel        String?
+  voy           String?
+  arrivalDate   DateTime?
+  consignee     String?
+  clearingAgent String?
+  transporter   String?
+  transporterId String?       @db.Uuid
+  exchangeRate  Decimal?      @db.Decimal(18, 6)
+  discount      Decimal?      @db.Decimal(18, 2)
+  condition     EirCondition?
+  prevCondition EirCondition?
+  status        EirStatus     @default(DRAFT)
+  tareWt        Decimal?      @db.Decimal(10, 2)
+  isHeavy       Boolean       @default(false)
+  blNo          String?
+  pnr           String?
+  sendCodeco    Boolean       @default(false)
+  bypassSurvey  Boolean       @default(false)
+  isCancelled   Boolean       @default(false)
+  cancelReason  String?
+  createdBy     String?       @db.Uuid
+  amendedBy     String?       @db.Uuid
+  amendedAt     DateTime?
+  lpId          String?       @db.Uuid
+
+  container         Container       @relation(fields: [containerId], references: [id], onDelete: Restrict)
+  line              ShippingLine    @relation(fields: [lineId], references: [id], onDelete: Restrict)
+  yard              Yard            @relation(fields: [yardId], references: [id], onDelete: Restrict)
+  terminal          Terminal?       @relation(fields: [terminalId], references: [id], onDelete: SetNull)
+  createdByUser     User?           @relation("EirRecordCreatedBy", fields: [createdBy], references: [id], onDelete: SetNull)
+  amendedByUser     User?           @relation("EirRecordAmendedBy", fields: [amendedBy], references: [id], onDelete: SetNull)
+  loadingProgram    LoadingProgram? @relation(fields: [lpId], references: [id], onDelete: SetNull)
+  transporterRecord Transporter?    @relation("TransporterRecords", fields: [transporterId], references: [id], onDelete: SetNull)
+  codecoLogs        CodecoLog[]
+
+  @@unique([yardId, eirNo])
+  @@index([containerNo, gateDate])
+  @@index([yardId, containerNo, gateDate])
+  @@index([lineId, status, gateDate])
+  @@index([terminalId, gateDate])
+  @@index([lpId])
+  @@index([createdBy, amendedAt])
+  @@index([isCancelled, status])
+}
+
+model LoadingProgram {
+  id              String    @id @default(uuid()) @db.Uuid
+  lpNo            String    @unique
+  lpType          LpType
+  lineId          String    @db.Uuid
+  terminalId      String?   @db.Uuid
+  yardId          String    @db.Uuid
+  vessel          String?
+  voy             String?
+  arrivalDate     DateTime?
+  loadingPortId   String?   @db.Uuid
+  loadingPort     String?
+  loadingCode     String?
+  dischargePortId String?   @db.Uuid
+  dischargePort   String?
+  dischargeCode   String?
+  finalDestId     String?   @db.Uuid
+  finalDest       String?
+  finalCode       String?
+  shipper         String?
+  clearingAgent   String?
+  transporter     String?
+  transporterId   String?   @db.Uuid
+  chalanNo        String?
+  isCancelled     Boolean   @default(false)
+  createdBy       String?   @db.Uuid
+  amendedBy       String?   @db.Uuid
+  amendedAt       DateTime?
+  createdAt       DateTime  @default(now())
+
+  line             ShippingLine @relation(fields: [lineId], references: [id], onDelete: Restrict)
+  terminal         Terminal?    @relation(fields: [terminalId], references: [id], onDelete: SetNull)
+  yard             Yard         @relation(fields: [yardId], references: [id], onDelete: Restrict)
+  loadingPortRef   Port?        @relation("LoadingPort", fields: [loadingPortId], references: [id], onDelete: SetNull)
+  dischargePortRef Port?        @relation("DischargePort", fields: [dischargePortId], references: [id], onDelete: SetNull)
+  finalDestPortRef Port?        @relation("FinalDestinationPort", fields: [finalDestId], references: [id], onDelete: SetNull)
+  createdByUser    User?        @relation("LoadingProgramCreatedBy", fields: [createdBy], references: [id], onDelete: SetNull)
+  amendedByUser    User?        @relation("LoadingProgramAmendedBy", fields: [amendedBy], references: [id], onDelete: SetNull)
+  lpSizes          LpSize[]
+  eirRecords       EirRecord[]
+
+  @@unique([yardId, lpNo])
+  @@index([lineId, lpType, arrivalDate])
+  @@index([yardId, lpType, arrivalDate])
+  @@index([terminalId, arrivalDate])
+  @@index([loadingPortId, dischargePortId, finalDestId])
+  @@index([isCancelled, createdAt])
+}
+
+model LpSize {
+  id          String        @id @default(uuid()) @db.Uuid
+  lpId        String        @db.Uuid
+  size        ContainerSize
+  totalQty    Int
+  pickedQty   Int           @default(0)
+  isCancelled Boolean       @default(false)
+
+  loadingProgram LoadingProgram @relation(fields: [lpId], references: [id], onDelete: Cascade)
+
+  @@unique([lpId, size])
+  @@index([lpId, isCancelled])
+}
+
+model BlockContainer {
+  id          String    @id @default(uuid()) @db.Uuid
+  containerId String    @db.Uuid
+  containerNo String
+  lineId      String    @db.Uuid
+  yardId      String    @db.Uuid
+  holdFor     String?
+  remarks     String?
+  isAllowed   Boolean   @default(false)
+  allowDate   DateTime?
+  allowBy     String?   @db.Uuid
+  createdBy   String?   @db.Uuid
+  createdAt   DateTime  @default(now())
+  amendedBy   String?   @db.Uuid
+  amendedAt   DateTime?
+
+  container     Container    @relation(fields: [containerId], references: [id], onDelete: Restrict)
+  line          ShippingLine @relation(fields: [lineId], references: [id], onDelete: Restrict)
+  yard          Yard         @relation(fields: [yardId], references: [id], onDelete: Restrict)
+  allowedBy     User?        @relation("BlockContainerAllowedBy", fields: [allowBy], references: [id], onDelete: SetNull)
+  createdByUser User?        @relation("BlockContainerCreatedBy", fields: [createdBy], references: [id], onDelete: SetNull)
+  amendedByUser User?        @relation("BlockContainerAmendedBy", fields: [amendedBy], references: [id], onDelete: SetNull)
+
+  @@index([yardId, lineId, containerNo])
+  @@index([yardId, isAllowed, allowDate])
+  @@index([allowBy, allowDate])
+}
+
+model Survey {
+  id          String          @id @default(uuid()) @db.Uuid
+  containerId String          @db.Uuid
+  containerNo String
+  yardId      String          @db.Uuid
+  size        ContainerSize
+  status      SurveyStatus    @default(PENDING)
+  condition   SurveyCondition @default(UNKNOWN)
+  surveyedAt  DateTime?
+  surveyedBy  String?         @db.Uuid
+
+  container      Container        @relation(fields: [containerId], references: [id], onDelete: Restrict)
+  yard           Yard             @relation(fields: [yardId], references: [id], onDelete: Restrict)
+  surveyedByUser User?            @relation(fields: [surveyedBy], references: [id], onDelete: SetNull)
+  photos         ContainerPhoto[]
+
+  @@index([yardId, containerNo, surveyedAt])
+  @@index([containerId, status, surveyedAt])
+  @@index([surveyedBy, surveyedAt])
+}
+
+model ContainerPhoto {
+  id          String   @id @default(uuid()) @db.Uuid
+  containerId String   @db.Uuid
+  containerNo String
+  surveyId    String   @db.Uuid
+  fileUrl     String
+  fileKey     String?
+  uploadedAt  DateTime @default(now())
+  uploadedBy  String?  @db.Uuid
+
+  container      Container @relation(fields: [containerId], references: [id], onDelete: Restrict)
+  survey         Survey    @relation(fields: [surveyId], references: [id], onDelete: Cascade)
+  uploadedByUser User?     @relation(fields: [uploadedBy], references: [id], onDelete: SetNull)
+
+  @@index([surveyId, uploadedAt])
+  @@index([containerNo, uploadedAt])
+  @@index([fileKey])
+}
+
+model Tariff {
+  id            String           @id @default(uuid()) @db.Uuid
+  lineId        String           @db.Uuid
+  yardId        String           @db.Uuid
+  size          ContainerSize
+  eventType     TariffEventType
+  chargeType    TariffChargeType
+  amount        Decimal          @db.Decimal(18, 2)
+  minAmount     Decimal?         @db.Decimal(18, 2)
+  effectiveFrom DateTime
+  effectiveTo   DateTime?
+
+  line ShippingLine @relation(fields: [lineId], references: [id], onDelete: Restrict)
+  yard Yard         @relation(fields: [yardId], references: [id], onDelete: Restrict)
+
+  @@unique([lineId, yardId, size, eventType, chargeType, effectiveFrom])
+  @@index([lineId, yardId, size, effectiveFrom, effectiveTo])
+  @@index([eventType, chargeType])
+}
+
+model Transporter {
+  id       String  @id @default(uuid()) @db.Uuid
+  name     String  @unique
+  ntn      String? @unique
+  contact  String?
+  isActive Boolean @default(true)
+
+  eirRecords EirRecord[] @relation("TransporterRecords")
+
+  @@index([name, isActive])
+}
+
+model CodecoLog {
+  id             String       @id @default(uuid()) @db.Uuid
+  eirId          String       @db.Uuid
+  containerNo    String
+  lineId         String       @db.Uuid
+  messageContent String
+  sentAt         DateTime?
+  status         CodecoStatus @default(PENDING)
+  errorMsg       String?
+
+  eirRecord EirRecord    @relation(fields: [eirId], references: [id], onDelete: Cascade)
+  line      ShippingLine @relation(fields: [lineId], references: [id], onDelete: Restrict)
+
+  @@index([eirId, status, sentAt])
+  @@index([lineId, status, sentAt])
+  @@index([containerNo, sentAt])
+}
+
+model AuditLog {
+  id        String   @id @default(uuid()) @db.Uuid
+  action    String
+  module    String
+  recordId  String?
+  userId    String?  @db.Uuid
+  oldValue  Json?
+  newValue  Json?
+  timestamp DateTime @default(now())
+  ipAddress String?
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([module, recordId, timestamp])
+  @@index([userId, timestamp])
+  @@index([action, timestamp])
+}
+
+model EdiUpload {
+  id             String          @id @default(uuid()) @db.Uuid
+  uploadType     EdiUploadType
+  fileName       String
+  lineId         String?         @db.Uuid
+  yardId         String?         @db.Uuid
+  status         EdiUploadStatus @default(UPLOADED)
+  processedCount Int             @default(0)
+  errorCount     Int             @default(0)
+  uploadedBy     String?         @db.Uuid
+  uploadedAt     DateTime        @default(now())
+
+  line           ShippingLine? @relation(fields: [lineId], references: [id], onDelete: SetNull)
+  yard           Yard?         @relation(fields: [yardId], references: [id], onDelete: SetNull)
+  uploadedByUser User?         @relation(fields: [uploadedBy], references: [id], onDelete: SetNull)
+
+  @@index([lineId, yardId, uploadType, uploadedAt])
+  @@index([status, uploadedAt])
+  @@index([uploadedBy, uploadedAt])
+}
