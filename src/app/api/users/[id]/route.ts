@@ -1,25 +1,35 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-// bcrypt not needed for update without password
+import bcrypt from "bcryptjs";
 import { auth } from "@/lib/auth";
+
+function requireAdmin(session: any) {
+  const user = session?.user as { role?: string };
+  return user?.role && ["ADMIN", "SUPER_ADMIN"].includes(user.role);
+}
 
 /**
  * PUT /api/users/[id]
- * Update user fields. Password will be re-hashed if provided.
  */
-export async function PUT(request: Request, { params }: { params: { id: string } }) {
+export async function PUT(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
   const session = await auth();
 
-const user = session?.user as {
-  role?: string;
-};
+  if (!requireAdmin(session)) {
+    return new NextResponse("Forbidden", { status: 403 });
+  }
 
-if (!user.role || !["ADMIN", "SUPER_ADMIN"].includes(user.role)) {
-  return new NextResponse("Forbidden", { status: 403 });
-}
-  const payload = await request.json();
-  const { username, email, password, role, yardId, isActive } = payload;
   try {
+    const payload = await request.json();
+
+    if (!payload || typeof payload !== "object") {
+      return new NextResponse("Invalid request", { status: 400 });
+    }
+
+    const { username, email, password, role, yardId, isActive } = payload;
+
     const data: any = {
       username,
       email,
@@ -27,14 +37,17 @@ if (!user.role || !["ADMIN", "SUPER_ADMIN"].includes(user.role)) {
       yardId: yardId ?? null,
       isActive,
     };
+
     if (password) {
       data.passwordHash = await bcrypt.hash(password, 10);
     }
-    const user = await prisma.user.update({
+
+    const updatedUser = await prisma.user.update({
       where: { id: params.id },
       data,
     });
-    return NextResponse.json(user);
+
+    return NextResponse.json(updatedUser);
   } catch (err) {
     console.error(err);
     return new NextResponse("Failed to update user", { status: 500 });
@@ -42,30 +55,32 @@ if (!user.role || !["ADMIN", "SUPER_ADMIN"].includes(user.role)) {
 }
 
 /**
- * DELETE /api/users/[id]
- * Deactivate (set isActive false) or reactivate user.
- * Expect query param ?activate=true to reactivate.
+ * PATCH /api/users/[id] (activate/deactivate)
  */
-export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+export async function PATCH(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
   const session = await auth();
 
-const user = session?.user as {
-  role?: string;
-};
+  if (!requireAdmin(session)) {
+    return new NextResponse("Forbidden", { status: 403 });
+  }
 
-if (!user.role || !["ADMIN", "SUPER_ADMIN"].includes(user.role)) {
-  return new NextResponse("Forbidden", { status: 403 });
-}
   const url = new URL(request.url);
   const activate = url.searchParams.get("activate") === "true";
+
   try {
-    const user = await prisma.user.update({
+    const updatedUser = await prisma.user.update({
       where: { id: params.id },
       data: { isActive: activate },
     });
-    return NextResponse.json(user);
+
+    return NextResponse.json(updatedUser);
   } catch (err) {
     console.error(err);
-    return new NextResponse("Failed to change user status", { status: 500 });
+    return new NextResponse("Failed to change user status", {
+      status: 500,
+    });
   }
 }
