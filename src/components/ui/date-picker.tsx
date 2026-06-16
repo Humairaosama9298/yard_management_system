@@ -3,7 +3,7 @@
 
 import * as React from "react"
 import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
+import { buttonVariants } from "@/components/ui/button"
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover"
 import { Calendar } from "@/components/ui/calendar"
 
@@ -25,20 +25,22 @@ export function DatePicker({ value, onChange, placeholder }: DatePickerProps) {
 
   return (
     <Popover>
-      <PopoverTrigger asChild>
-        <Button
-          variant="outline"
-          className={cn("w-full justify-start text-left font-normal", !value && "text-muted-foreground")}
-        >
-          {value ? formatted : placeholder || "Pick a date"}
-        </Button>
-      </PopoverTrigger>
+     <PopoverTrigger
+  className={cn(
+    buttonVariants({
+      variant: "outline",
+    }),
+    "w-full justify-start text-left font-normal",
+    !value && "text-muted-foreground"
+  )}
+>
+  {value ? formatted : placeholder || "Pick a date"}
+</PopoverTrigger>
       <PopoverContent className="w-auto p-0" align="start">
         <Calendar
           mode="single"
           selected={value}
           onSelect={onChange}
-          static
         />
       </PopoverContent>
     </Popover>

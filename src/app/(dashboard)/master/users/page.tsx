@@ -1,36 +1,43 @@
+// src/app/(dashboard)/master/users/page.tsx
 "use client"
 
 import React, { useState } from "react"
-import { useForm, Controller, SubmitHandler } from "react-hook-form"
+import { useForm, SubmitHandler } from "react-hook-form"
 import { z } from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { motion } from "framer-motion"
 import { toast } from "sonner"
 
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table"
-import { Input } from "@/components/ui/input"
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
+import { AlertDialog, AlertDialogTrigger, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogAction, AlertDialogCancel } from "@/components/ui/alert-dialog"
+import { Input } from "@/components/ui/input"
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select"
+import { Switch } from "@/components/ui/switch"
 
-// -----------------------------------------------------------------------------
-// Schema for user create / edit
-// -----------------------------------------------------------------------------
-const userSchema = z.object({
+// ---------------------------------------------------------------------------
+// Schemas
+// ---------------------------------------------------------------------------
+const createSchema = z.object({
   username: z.string().min(1),
   email: z.string().email(),
-  password: z.string().min(6).optional(),
-  role: z.enum(["ADMIN", "SUPER_ADMIN", "MANAGER", "OPERATOR", "AUDITOR", "VIEWER"]),
+  password: z.string().min(6),
+  role: z.enum(["SUPER_ADMIN", "ADMIN", "OPERATOR", "ACCOUNTS", "VIEW_ONLY"]),
   yardId: z.string().optional(),
   isActive: z.boolean().default(true),
 })
 
-type UserForm = z.infer<typeof userSchema>
+const editSchema = createSchema.omit({ password: true })
 
-// -----------------------------------------------------------------------------
+type CreateForm = z.infer<typeof createSchema>
+type EditForm = z.infer<typeof editSchema>
+
+// ---------------------------------------------------------------------------
 // Types returned by the API
-// -----------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
 interface Yard {
   id: string
   name: string
@@ -47,8 +54,21 @@ interface User {
 }
 
 export default function UsersPage() {
+  // ---------------------------------------------------------------------
+  // Session role – placeholder, replace with real session fetch when available
+  // ---------------------------------------------------------------------
+  const [sessionRole] = useState<string>("ADMIN") // TODO: replace with auth hook
+
+  const canView = ["ADMIN", "SUPER_ADMIN"].includes(sessionRole)
+
+  const [dialogOpen, setDialogOpen] = useState(false)
+  const [editUser, setEditUser] = useState<User | null>(null)
   const queryClient = useQueryClient()
-  const { data: users, isLoading } = useQuery<User[]>({
+
+  // ---------------------------------------------------------------------
+  // Data fetching
+  // ---------------------------------------------------------------------
+  const { data: users, isLoading: usersLoading } = useQuery<User[]>({
     queryKey: ["users"],
     queryFn: async () => {
       const res = await fetch("/api/users")
@@ -57,14 +77,27 @@ export default function UsersPage() {
     },
   })
 
+  const { data: yards } = useQuery<Yard[]>({
+    queryKey: ["yards"],
+    queryFn: async () => {
+      const res = await fetch("/api/master/yards")
+      if (!res.ok) return []
+      return res.json()
+    },
+    enabled: !!dialogOpen, // fetch yards only when dialog may need them
+  })
+
+  // ---------------------------------------------------------------------
+  // Mutations
+  // ---------------------------------------------------------------------
   const createMut = useMutation({
-    mutationFn: async (payload: UserForm) => {
+    mutationFn: async (payload: CreateForm) => {
       const res = await fetch("/api/users", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       })
-      if (!res.ok) throw new Error("Failed to create user")
+      if (!res.ok) throw new Error("Create failed")
       return res.json()
     },
     onSuccess: () => {
@@ -75,13 +108,13 @@ export default function UsersPage() {
   })
 
   const updateMut = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: UserForm }) => {
+    mutationFn: async ({ id, data }: { id: string; data: EditForm }) => {
       const res = await fetch(`/api/users/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       })
-      if (!res.ok) throw new Error("Failed to update user")
+      if (!res.ok) throw new Error("Update failed")
       return res.json()
     },
     onSuccess: () => {
@@ -91,193 +124,234 @@ export default function UsersPage() {
     onError: (err: any) => toast.error(err.message),
   })
 
-  const toggleActiveMut = useMutation({
-    mutationFn: async ({ id, activate }: { id: string; activate: boolean }) => {
-      const res = await fetch(`/api/users/${id}?activate=${activate}`, { method: "DELETE" })
-      if (!res.ok) throw new Error("Failed to change status")
+  const deactivateMut = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await fetch(`/api/users/${id}`, { method: "DELETE" })
+      if (!res.ok) throw new Error("Deactivate failed")
       return res.json()
     },
     onSuccess: () => {
-      toast.success("User status changed")
+      toast.success("User deactivated")
       queryClient.invalidateQueries({ queryKey: ["users"] })
     },
     onError: (err: any) => toast.error(err.message),
   })
 
-  // ---------------------------------------------------------------------------
-  // Dialog handling
-  // ---------------------------------------------------------------------------
-  const [open, setOpen] = useState(false)
-  const [editUser, setEditUser] = useState<User | null>(null)
-  const defaultValues: UserForm = {
-    username: "",
-    email: "",
-    password: undefined,
-    role: "OPERATOR",
-    yardId: "",
-    isActive: true,
-  }
+  // ---------------------------------------------------------------------
+  // Form handling
+  // ---------------------------------------------------------------------
   const {
     register,
     handleSubmit,
     reset,
-    control,
     setValue,
-  } = useForm<UserForm>({
-    resolver: zodResolver(userSchema),
-    defaultValues,
+    control,
+  } = useForm<CreateForm>({
+    resolver: zodResolver(createSchema),
+    defaultValues: {
+      username: "",
+      email: "",
+      password: "",
+      role: "OPERATOR",
+      yardId: "",
+      isActive: true,
+    },
   })
 
-  const onSubmit: SubmitHandler<UserForm> = (data) => {
+  const {
+    register: editRegister,
+    handleSubmit: handleEditSubmit,
+    reset: resetEdit,
+    setValue: setEditValue,
+    control: editControl,
+  } = useForm<EditForm>({
+    resolver: zodResolver(editSchema),
+    defaultValues: {
+      username: "",
+      email: "",
+      role: "OPERATOR",
+      yardId: "",
+      isActive: true,
+    },
+  })
+
+  const onCreate: SubmitHandler<CreateForm> = (data) => {
+    createMut.mutate(data)
+    setDialogOpen(false)
+    reset()
+  }
+
+  const onEdit: SubmitHandler<EditForm> = (data) => {
     if (editUser) {
       updateMut.mutate({ id: editUser.id, data })
-    } else {
-      createMut.mutate(data)
     }
-    setOpen(false)
-    reset(defaultValues)
+    setDialogOpen(false)
+    resetEdit()
     setEditUser(null)
   }
 
   const startEdit = (user: User) => {
     setEditUser(user)
-    setValue("username", user.username)
-    setValue("email", user.email)
-    setValue("role", user.role as any)
-    setValue("yardId", user.yard?.id ?? "")
-    setValue("isActive", user.isActive)
-    setOpen(true)
+    setEditValue("username", user.username)
+    setEditValue("email", user.email)
+    setEditValue("role", user.role as any)
+    setEditValue("yardId", user.yard?.id ?? "")
+    setEditValue("isActive", user.isActive)
+    setDialogOpen(true)
   }
 
-  // ---------------------------------------------------------------------------
+  // ---------------------------------------------------------------------
   // Row animation
-  // ---------------------------------------------------------------------------
+  // ---------------------------------------------------------------------
   const rowVariants = {
     hidden: { opacity: 0, y: 10 },
     visible: { opacity: 1, y: 0 },
   }
 
-  // ---------------------------------------------------------------------------
-  // Simple role guard – assume session is fetched elsewhere; if not admin, show message.
-  // ---------------------------------------------------------------------------
-  // For brevity we only check client‑side – server side should also enforce.
-  const [sessionRole, setSessionRole] = useState<string>("ADMIN") // placeholder, replace with real session fetch.
-
-  if (!["ADMIN", "SUPER_ADMIN"].includes(sessionRole)) {
+  if (!canView) {
     return <div className="p-4">Forbidden – you do not have permission to view this page.</div>
   }
 
   return (
-    <div className="p-4 space-y-6">
-      <h1 className="text-2xl font-bold">User Management</h1>
-      <Button onClick={() => setOpen(true)}>Add User</Button>
+    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.3 }}
+      initial={{ opacity: 0, x: -20 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: 20 }}
+      transition={{ duration: 0.3 }}
+    >
+      <div className="p-4 space-y-6">
+        <h1 className="text-2xl font-bold">User Management</h1>
+        <Button onClick={() => { setEditUser(null); setDialogOpen(true); }} className="mb-4">
+          Add User
+        </Button>
 
-      {/* Users table */}
-      {isLoading ? (
-        <div>Loading…</div>
-      ) : (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Username</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>Role</TableHead>
-              <TableHead>Yard</TableHead>
-              <TableHead>Active</TableHead>
-              <TableHead>Last Login</TableHead>
-              <TableHead>Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {users?.map((u) => (
-              <motion.tr
-                key={u.id}
-                variants={rowVariants}
-                initial="hidden"
-                animate="visible"
-                className="border-t"
-              >
-                <TableCell>{u.username}</TableCell>
-                <TableCell>{u.email}</TableCell>
-                <TableCell>{u.role}</TableCell>
-                <TableCell>{u.yard?.name ?? "-"}</TableCell>
-                <TableCell>{u.isActive ? "Yes" : "No"}</TableCell>
-                <TableCell>{u.lastLogin ? new Date(u.lastLogin).toLocaleString() : "-"}</TableCell>
-                <TableCell className="space-x-2">
-                  <Button variant="outline" size="sm" onClick={() => startEdit(u)}>
-                    Edit
-                  </Button>
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={() =>
-                      toggleActiveMut.mutate({ id: u.id, activate: !u.isActive })
-                    }
-                  >
-                    {u.isActive ? "Deactivate" : "Activate"}
-                  </Button>
-                </TableCell>
-              </motion.tr>
-            ))}
-          </TableBody>
-        </Table>
-      )}
+        {usersLoading ? (
+          <div>Loading…</div>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Username</TableHead>
+                <TableHead>Email</TableHead>
+                <TableHead>Role</TableHead>
+                <TableHead>Yard</TableHead>
+                <TableHead>Active</TableHead>
+                <TableHead>Last Login</TableHead>
+                <TableHead>Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {users?.map((u) => (
+                <motion.tr
+                  key={u.id}
+                  variants={rowVariants}
+                  initial="hidden"
+                  animate="visible"
+                  className="border-t"
+                >
+                  <TableCell>{u.username}</TableCell>
+                  <TableCell>{u.email}</TableCell>
+                  <TableCell>{u.role}</TableCell>
+                  <TableCell>{u.yard?.name ?? "-"}</TableCell>
+                  <TableCell>{u.isActive ? "Yes" : "No"}</TableCell>
+                  <TableCell>{u.lastLogin ? new Date(u.lastLogin).toLocaleString() : "-"}</TableCell>
+                  <TableCell className="flex space-x-2">
+                    <Button variant="outline" size="sm" onClick={() => startEdit(u)}>
+                      Edit
+                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="destructive" size="sm">
+                          {u.isActive ? "Deactivate" : "Activate"}
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>{u.isActive ? "Deactivate" : "Activate"} User</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Are you sure you want to {u.isActive ? "deactivate" : "activate"} "{u.username}"?
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => deactivateMut.mutate(u.id)}>
+                            {u.isActive ? "Deactivate" : "Activate"}
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </TableCell>
+                </motion.tr>
+              ))}
+            </TableBody>
+          </Table>
+        )}
 
-      {/* Add / Edit Dialog */}
-      <Dialog open={open} onOpenChange={(v) => {
-        setOpen(v)
-        if (!v) { setEditUser(null); reset(defaultValues) }
-      }}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{editUser ? "Edit User" : "Add User"}</DialogTitle>
-            <DialogDescription>{editUser ? "Update existing user" : "Create a new user"}</DialogDescription>
-          </DialogHeader>
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            <Input placeholder="Username" {...register("username")} />
-            <Input placeholder="Email" type="email" {...register("email")} />
-            {/* Password is optional on edit */}
-            <Input placeholder="Password" type="password" {...register("password")} />
-            <Controller
-              name="role"
-              control={control}
-              render={({ field }) => (
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+        {/* Add / Edit Dialog */}
+        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>{editUser ? "Edit User" : "Add User"}</DialogTitle>
+              <DialogDescription>
+                {editUser ? "Update existing user" : "Create a new user"}
+              </DialogDescription>
+            </DialogHeader>
+            <form onSubmit={editUser ? handleEditSubmit(onEdit) : handleSubmit(onCreate)} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">Username</label>
+                <Input {...(editUser ? editRegister("username") : register("username"))} />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Email</label>
+                <Input type="email" {...(editUser ? editRegister("email") : register("email"))} />
+              </div>
+              {!editUser && (
+                <div>
+                  <label className="block text-sm font-medium mb-1">Password</label>
+                  <Input type="password" {...register("password")} />
+                </div>
+              )}
+              <div>
+                <label className="block text-sm font-medium mb-1">Role</label>
+                <Select onValueChange={(v) => (editUser ? setEditValue("role", v as any) : setValue("role", v as any))} defaultValue={editUser?.role ?? "OPERATOR"}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select role" />
                   </SelectTrigger>
                   <SelectContent>
-                    {["ADMIN", "SUPER_ADMIN", "MANAGER", "OPERATOR", "AUDITOR", "VIEWER"].map((r) => (
+                    {["SUPER_ADMIN", "ADMIN", "OPERATOR", "ACCOUNTS", "VIEW_ONLY"].map((r) => (
                       <SelectItem key={r} value={r}>
                         {r}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
-              )}
-            />
-            <Input placeholder="Yard ID" {...register("yardId")} />
-            <Controller
-              name="isActive"
-              control={control}
-              render={({ field }) => (
-                <Select onValueChange={(v) => field.onChange(v === "true")} defaultValue={String(field.value)}>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Yard</label>
+                <Select onValueChange={(v) => (editUser ? setEditValue("yardId", v) : setValue("yardId", v))} defaultValue={editUser?.yard?.id ?? ""}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Active?" />
+                    <SelectValue placeholder="Select yard" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="true">Yes</SelectItem>
-                    <SelectItem value="false">No</SelectItem>
+                    {yards?.map((y) => (
+                      <SelectItem key={y.id} value={y.id}>
+                        {y.name}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
-              )}
-            />
-            <DialogFooter>
-              <Button type="submit">{editUser ? "Update" : "Create"}</Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
-    </div>
+              </div>
+              <div className="flex items-center space-x-2">
+                <label className="text-sm font-medium">Active</label>
+                <Switch {...(editUser ? editRegister("isActive") : register("isActive"))} />
+              </div>
+              <DialogFooter>
+                <Button type="submit">{editUser ? "Update" : "Create"}</Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
+      </div>
+    </motion.div>
   )
 }

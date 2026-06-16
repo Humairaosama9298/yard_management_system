@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image"
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -11,7 +12,7 @@ import {
   ArrowRightLeft,
   Boxes,
   FileBarChart2,
-  Image,
+  Image as ImageIcon,
   Truck,
   CalendarCheck,
   Send,
@@ -22,9 +23,11 @@ import {
   LogOut,
 } from "lucide-react";
 
+import { cn } from "@/lib/utils";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Sheet, SheetTrigger, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useUiStore } from "@/store/ui.store";
@@ -48,7 +51,7 @@ export default function DashboardLayoutClient({
     { href: "/gate-out", label: "Gate‑Out", icon: <ArrowRightLeft size={18} /> },
     { href: "/block-container", label: "Block Container", icon: <Boxes size={18} /> },
     { href: "/survey", label: "Survey", icon: <FileBarChart2 size={18} /> },
-    { href: "/pictures", label: "Pictures", icon: <Image size={18} /> },
+    { href: "/pictures", label: "Pictures", icon: <ImageIcon size={18} /> },
     { href: "/reports/stock", label: "Stock Reports", icon: <Truck size={18} /> },
     { href: "/reports/daily", label: "Daily Reports", icon: <CalendarCheck size={18} /> },
     { href: "/edi", label: "EDI", icon: <Send size={18} /> },
@@ -56,15 +59,20 @@ export default function DashboardLayoutClient({
 
   return (
     <div className="flex min-h-screen bg-background text-foreground">
-      {/* Sidebar */}
+      {/* Sidebar - desktop */}
       <motion.aside
-        initial={{ x: -240 }}
-        animate={{ x: sidebarOpen ? 0 : -240 }}
-        transition={{ type: "spring", stiffness: 300, damping: 30 }}
-        className="fixed inset-y-0 left-0 z-20 w-60 bg-card shadow-md flex flex-col"
-      >
+  initial={{ x: -240 }}
+  animate={{ x: sidebarOpen ? 0 : -240 }}
+  transition={{ type: "spring", stiffness: 300, damping: 30 }}
+  className="fixed inset-y-0 left-0 z-20 hidden md:flex w-60 bg-card shadow-md flex-col"
+>
         <div className="flex items-center gap-2 p-4 border-b">
-          <img src="/logo.svg" alt="Logo" className="h-8 w-8" />
+          <Image
+    src="/images/logo.png"
+    alt="Logo"
+    width={60}
+    height={60}
+  />
           <span className="font-bold">Yard System</span>
         </div>
         <nav className="flex-1 overflow-y-auto py-2">
@@ -103,6 +111,49 @@ export default function DashboardLayoutClient({
       {/* Main content area */}
       <div className="flex flex-col flex-1 ml-60 transition-margin duration-300">
         {/* Topbar */}
+          {/* Mobile Sheet for navigation */}
+          <Sheet
+  open={sidebarOpen}
+  onOpenChange={(open) => {
+    if (open !== sidebarOpen) {
+      toggleSidebar();
+    }
+  }}
+>
+           <SheetTrigger
+  className={cn(
+    buttonVariants({
+      variant: "ghost",
+      size: "icon",
+    }),
+    "md:hidden"
+  )}
+>
+  <svg viewBox="0 0 20 20" className="h-5 w-5" fill="currentColor">
+    <path d="M2 4h16M2 10h16M2 16h16" />
+  </svg>
+</SheetTrigger>
+            <SheetContent side="left" className="flex flex-col p-0">
+              <SheetHeader className="p-4 border-b">
+                <SheetTitle>Menu</SheetTitle>
+              </SheetHeader>
+              <nav className="flex-1 overflow-y-auto py-2">
+                {navItems.map((item) => (
+                  <Button
+                    key={item.href}
+                    variant={pathname.startsWith(item.href) ? "secondary" : "ghost"}
+                    className="w-full justify-start px-4 py-2 text-left"
+                    asChild
+                  >
+                    <a href={item.href} className="flex items-center gap-3" onClick={() => toggleSidebar()}>
+                      {item.icon}
+                      <span>{item.label}</span>
+                    </a>
+                  </Button>
+                ))}
+              </nav>
+            </SheetContent>
+          </Sheet>
         <header className="flex items-center justify-between h-16 px-6 border-b">
           <div className="flex items-center gap-2">
             <Button variant="ghost" size="icon" onClick={toggleSidebar}>

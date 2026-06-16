@@ -1,18 +1,22 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import bcrypt from "bcryptjs";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+// bcrypt not needed for update without password
+import { auth } from "@/lib/auth";
 
 /**
  * PUT /api/users/[id]
  * Update user fields. Password will be re-hashed if provided.
  */
 export async function PUT(request: Request, { params }: { params: { id: string } }) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.role || !["ADMIN", "SUPER_ADMIN"].includes(session.user.role)) {
-    return new NextResponse("Forbidden", { status: 403 });
-  }
+  const session = await auth();
+
+const user = session?.user as {
+  role?: string;
+};
+
+if (!user.role || !["ADMIN", "SUPER_ADMIN"].includes(user.role)) {
+  return new NextResponse("Forbidden", { status: 403 });
+}
   const payload = await request.json();
   const { username, email, password, role, yardId, isActive } = payload;
   try {
@@ -43,10 +47,15 @@ export async function PUT(request: Request, { params }: { params: { id: string }
  * Expect query param ?activate=true to reactivate.
  */
 export async function DELETE(request: Request, { params }: { params: { id: string } }) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.role || !["ADMIN", "SUPER_ADMIN"].includes(session.user.role)) {
-    return new NextResponse("Forbidden", { status: 403 });
-  }
+  const session = await auth();
+
+const user = session?.user as {
+  role?: string;
+};
+
+if (!user.role || !["ADMIN", "SUPER_ADMIN"].includes(user.role)) {
+  return new NextResponse("Forbidden", { status: 403 });
+}
   const url = new URL(request.url);
   const activate = url.searchParams.get("activate") === "true";
   try {

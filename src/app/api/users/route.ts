@@ -1,16 +1,18 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import bcrypt from "bcryptjs";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { auth } from "@/lib/auth";
 
 /**
  * GET /api/users
  * Returns list of users with selected fields.
  */
 export async function GET() {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.role || !["ADMIN", "SUPER_ADMIN"].includes(session.user.role)) {
+  const session = await auth();
+  const user = session?.user as {
+    role?: string;
+  };
+  if (!user.role || !["ADMIN", "SUPER_ADMIN"].includes(user.role)) {
     return new NextResponse("Forbidden", { status: 403 });
   }
   try {
@@ -37,10 +39,15 @@ export async function GET() {
  * Create a new user. Password is hashed with bcrypt.
  */
 export async function POST(request: Request) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.role || !["ADMIN", "SUPER_ADMIN"].includes(session.user.role)) {
-    return new NextResponse("Forbidden", { status: 403 });
-  }
+  const session = await auth();
+
+const user = session?.user as {
+  role?: string;
+};
+
+if (!user.role || !["ADMIN", "SUPER_ADMIN"].includes(user.role)) {
+  return new NextResponse("Forbidden", { status: 403 });
+}
   const payload = await request.json();
   const { username, email, password, role, yardId, isActive } = payload;
   if (!username || !email || !password || !role) {
