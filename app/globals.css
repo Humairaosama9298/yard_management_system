@@ -1,0 +1,42 @@
+@import "tailwindcss";
+
+:root {
+  --ink: #10192b;
+  --steel: #1e2f4d;
+  --slate: #4a5d7c;
+  --mist: #eef1f6;
+  --paper: #f7f8fa;
+  --amber: #e08a2c;
+  --amber-deep: #b96a16;
+  --ok: #2f7a52;
+  --danger: #b3402c;
+  --line: #dfe3ea;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+}
+
+.font-display {
+  font-family: 'Segoe UI Semibold', 'Segoe UI', system-ui, sans-serif;
+  letter-spacing: -0.01em;
+}
+
+.font-mono {
+  font-family: ui-monospace, 'Consolas', 'SFMono-Regular', monospace;
+}
+
+::selection {
+  background: var(--amber);
+  color: white;
+}
+
+input, select, textarea {
+  font-family: inherit;
+}
