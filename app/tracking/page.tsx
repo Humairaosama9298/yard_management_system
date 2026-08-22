@@ -65,7 +65,7 @@ export default function Tracking() {
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left border-b" style={{ borderColor: "var(--line)" }}>
-                {["EIR No", "Mode", "Container", "Size", "Vessel/Voy", "Yard", "Terminal", "Status", "Truck", "Date"].map((h) => (
+                {["EIR No", "Mode", "Container", "Size", "Vessel/Voy", "Yard", "Terminal", "Status", "Truck", "Date", "Receipt"].map((h) => (
                   <th key={h} className="px-4 py-2.5 font-mono text-[11px] uppercase tracking-wide whitespace-nowrap" style={{ color: "var(--slate)" }}>{h}</th>
                 ))}
               </tr>
@@ -87,13 +87,23 @@ export default function Tracking() {
                   <td className="px-4 py-3 whitespace-nowrap" style={{ color: "var(--slate)" }}>
                     {new Date(r.event_date).toLocaleString()}
                   </td>
+                  <td className="px-4 py-3">
+                    <a
+                      href={`/receipt/${encodeURIComponent(r.eir_no)}`}
+                      target="_blank"
+                      className="text-[12px] font-medium underline"
+                      style={{ color: "var(--amber-deep)" }}
+                    >
+                      View / Print
+                    </a>
+                  </td>
                 </tr>
               ))}
               {!loading && searched && results.length === 0 && (
-                <tr><td colSpan={10} className="px-4 py-10 text-center" style={{ color: "var(--slate)" }}>No records found for "{query}".</td></tr>
+                <tr><td colSpan={11} className="px-4 py-10 text-center" style={{ color: "var(--slate)" }}>No records found for "{query}".</td></tr>
               )}
               {!searched && (
-                <tr><td colSpan={10} className="px-4 py-10 text-center" style={{ color: "var(--slate)" }}>Search a container or EIR number to see event history.</td></tr>
+                <tr><td colSpan={11} className="px-4 py-10 text-center" style={{ color: "var(--slate)" }}>Search a container or EIR number to see event history.</td></tr>
               )}
             </tbody>
           </table>

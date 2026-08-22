@@ -19,6 +19,7 @@ export default function GateIn() {
   const [yards, setYards] = useState<Opt[]>([]);
   const [transporters, setTransporters] = useState<Opt[]>([]);
   const [consignees, setConsignees] = useState<Opt[]>([]);
+  const [clearingAgents, setClearingAgents] = useState<Opt[]>([]);
   const [recent, setRecent] = useState<any[]>([]);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
@@ -37,6 +38,12 @@ export default function GateIn() {
     vessel_name: "",
     voyage: "",
     remarks: "",
+    clearing_agent_id: "",
+    tare_weight: "",
+    heavy: false,
+    bl_no: "",
+    arrival_date: "",
+    chalan_no: "",
   });
 
   async function loadOptions() {
@@ -44,13 +51,14 @@ export default function GateIn() {
       supabase.from("companies").select("id, name").eq("type", "shipping_line").order("name"),
       supabase.from("terminals").select("id, name").order("name"),
       supabase.from("yards").select("id, name").order("name"),
-      supabase.from("companies").select("id, name, type").in("type", ["consignee", "transporter"]).order("name"),
+      supabase.from("companies").select("id, name, type").in("type", ["consignee", "transporter", "clearing_agent"]).order("name"),
     ]);
     setLines(l.data ?? []);
     setTerminals(t.data ?? []);
     setYards(y.data ?? []);
     setConsignees((c.data ?? []).filter((x: any) => x.type === "consignee"));
     setTransporters((c.data ?? []).filter((x: any) => x.type === "transporter"));
+    setClearingAgents((c.data ?? []).filter((x: any) => x.type === "clearing_agent"));
   }
 
   async function loadRecent() {
@@ -97,6 +105,9 @@ export default function GateIn() {
         line_id: form.line_id,
         yard_id: form.yard_id,
         current_state: "IN_YARD",
+        tare_weight: form.tare_weight ? Number(form.tare_weight) : null,
+        heavy: form.heavy,
+        bl_no: form.bl_no || null,
       })
       .select("id")
       .single();
@@ -120,6 +131,9 @@ export default function GateIn() {
       truck_no: form.truck_no,
       status: form.status,
       remarks: form.remarks,
+      clearing_agent_id: form.clearing_agent_id || null,
+      arrival_date: form.arrival_date || null,
+      chalan_no: form.chalan_no || null,
     });
 
     if (form.status === "DAMAGE") {
@@ -130,7 +144,20 @@ export default function GateIn() {
     }
 
     setMessage(`Saved successfully — EIR: ${eir}`);
-    setForm({ ...form, container_no: "", present_status: "", truck_no: "", vessel_name: "", voyage: "", remarks: "" });
+    setForm({
+      ...form,
+      container_no: "",
+      present_status: "",
+      truck_no: "",
+      vessel_name: "",
+      voyage: "",
+      remarks: "",
+      tare_weight: "",
+      heavy: false,
+      bl_no: "",
+      arrival_date: "",
+      chalan_no: "",
+    });
     await loadRecent();
     setSaving(false);
   }
@@ -216,6 +243,35 @@ export default function GateIn() {
                 </Select>
               </Field>
             </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <Field label="Clearing Agent">
+                <Select value={form.clearing_agent_id} onChange={(e) => setForm({ ...form, clearing_agent_id: e.target.value })}>
+                  <option value="">Select clearing agent</option>
+                  {clearingAgents.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                </Select>
+              </Field>
+              <Field label="Arrival Date">
+                <Input type="date" value={form.arrival_date} onChange={(e) => setForm({ ...form, arrival_date: e.target.value })} />
+              </Field>
+            </div>
+
+            <div className="grid grid-cols-3 gap-4">
+              <Field label="Tare Weight">
+                <Input type="number" value={form.tare_weight} onChange={(e) => setForm({ ...form, tare_weight: e.target.value })} placeholder="32500" />
+              </Field>
+              <Field label="B/L No">
+                <Input value={form.bl_no} onChange={(e) => setForm({ ...form, bl_no: e.target.value })} placeholder="B/L number" />
+              </Field>
+              <Field label="Chalan No">
+                <Input value={form.chalan_no} onChange={(e) => setForm({ ...form, chalan_no: e.target.value })} placeholder="Chalan number" />
+              </Field>
+            </div>
+
+            <label className="flex items-center gap-2 text-sm" style={{ color: "var(--steel)" }}>
+              <input type="checkbox" checked={form.heavy} onChange={(e) => setForm({ ...form, heavy: e.target.checked })} />
+              Heavy
+            </label>
 
             <Field label="Truck No">
               <Input value={form.truck_no} onChange={(e) => setForm({ ...form, truck_no: e.target.value })} placeholder="TMB781" />

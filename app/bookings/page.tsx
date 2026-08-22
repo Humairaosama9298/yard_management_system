@@ -27,6 +27,10 @@ export default function Bookings() {
     shipper_id: "",
     size: "40HQ",
     quantity: 1,
+    commodity: "",
+    pod: "",
+    cutoff_date: "",
+    eta: "",
   });
 
   async function loadOptions() {
@@ -76,9 +80,26 @@ export default function Bookings() {
       shipper_id: form.shipper_id || null,
       size: form.size,
       quantity: form.quantity,
+      commodity: form.commodity || null,
+      pod: form.pod || null,
+      cutoff_date: form.cutoff_date || null,
+      eta: form.eta || null,
     });
 
-    setForm({ ...form, lp_no: "", vessel_name: "", voyage: "", loading_port: "", discharge_port: "", destination_port: "", quantity: 1 });
+    setForm({
+      ...form,
+      lp_no: "",
+      vessel_name: "",
+      voyage: "",
+      loading_port: "",
+      discharge_port: "",
+      destination_port: "",
+      quantity: 1,
+      commodity: "",
+      pod: "",
+      cutoff_date: "",
+      eta: "",
+    });
     await loadBookings();
     setSaving(false);
   }
@@ -139,6 +160,22 @@ export default function Bookings() {
                 {shippers.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
               </Select>
             </Field>
+            <div className="grid grid-cols-2 gap-4">
+              <Field label="Commodity">
+                <Input value={form.commodity} onChange={(e) => setForm({ ...form, commodity: e.target.value })} placeholder="DATES" />
+              </Field>
+              <Field label="POD (Port of Discharge)">
+                <Input value={form.pod} onChange={(e) => setForm({ ...form, pod: e.target.value })} placeholder="HAMBURG-GERMANY" />
+              </Field>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <Field label="Cutoff Date">
+                <Input type="datetime-local" value={form.cutoff_date} onChange={(e) => setForm({ ...form, cutoff_date: e.target.value })} />
+              </Field>
+              <Field label="ETA">
+                <Input type="date" value={form.eta} onChange={(e) => setForm({ ...form, eta: e.target.value })} />
+              </Field>
+            </div>
             <div className="grid grid-cols-2 gap-4">
               <Field label="Size">
                 <Select value={form.size} onChange={(e) => setForm({ ...form, size: e.target.value })}>

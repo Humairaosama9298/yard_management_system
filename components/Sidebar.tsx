@@ -13,6 +13,8 @@ import {
   Building2,
   BarChart3,
   Anchor,
+  PenSquare,
+  FileText,
 } from "lucide-react";
 
 const NAV = [
@@ -20,11 +22,13 @@ const NAV = [
   { href: "/gate-in", label: "Gate-In", icon: LogIn },
   { href: "/gate-out", label: "Gate-Out", icon: LogOut },
   { href: "/tracking", label: "Tracking", icon: Search },
+  { href: "/container-remarks", label: "Change Remarks", icon: PenSquare },
   { href: "/yard", label: "Yard Slots", icon: Grid3x3 },
   { href: "/bookings", label: "Loading Program", icon: ClipboardList },
   { href: "/block-container", label: "Block Container", icon: ShieldAlert },
   { href: "/masters", label: "Masters", icon: Building2 },
   { href: "/reports", label: "Reports", icon: BarChart3 },
+  { href: "/daily-report", label: "Daily Report (Line)", icon: FileText },
 ];
 
 export default function Sidebar() {
