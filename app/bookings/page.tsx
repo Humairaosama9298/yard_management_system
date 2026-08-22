@@ -107,10 +107,10 @@ export default function Bookings() {
   return (
     <div>
       <PageHeader eyebrow="Bookings" title="Loading Program" subtitle="Vessel booking details for export loading." />
-      <div className="p-8 grid grid-cols-3 gap-6">
+      <div className="p-4 md:p-8 grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card className="col-span-2 p-6">
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Field label="LP No" required>
                 <Input value={form.lp_no} onChange={(e) => setForm({ ...form, lp_no: e.target.value })} placeholder="2324444010" />
               </Field>
@@ -121,7 +121,7 @@ export default function Bookings() {
                 </Select>
               </Field>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Field label="Terminal">
                 <Select value={form.terminal_id} onChange={(e) => setForm({ ...form, terminal_id: e.target.value })}>
                   <option value="">Select terminal</option>
@@ -135,7 +135,7 @@ export default function Bookings() {
                 </Select>
               </Field>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Field label="Vessel Name">
                 <Input value={form.vessel_name} onChange={(e) => setForm({ ...form, vessel_name: e.target.value })} placeholder="XIN LOS ANGELES" />
               </Field>
@@ -143,7 +143,7 @@ export default function Bookings() {
                 <Input value={form.voyage} onChange={(e) => setForm({ ...form, voyage: e.target.value })} placeholder="178E" />
               </Field>
             </div>
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <Field label="Loading Port">
                 <Input value={form.loading_port} onChange={(e) => setForm({ ...form, loading_port: e.target.value })} placeholder="Karachi" />
               </Field>
@@ -160,7 +160,7 @@ export default function Bookings() {
                 {shippers.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
               </Select>
             </Field>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Field label="Commodity">
                 <Input value={form.commodity} onChange={(e) => setForm({ ...form, commodity: e.target.value })} placeholder="DATES" />
               </Field>
@@ -168,7 +168,7 @@ export default function Bookings() {
                 <Input value={form.pod} onChange={(e) => setForm({ ...form, pod: e.target.value })} placeholder="HAMBURG-GERMANY" />
               </Field>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Field label="Cutoff Date">
                 <Input type="datetime-local" value={form.cutoff_date} onChange={(e) => setForm({ ...form, cutoff_date: e.target.value })} />
               </Field>
@@ -176,7 +176,7 @@ export default function Bookings() {
                 <Input type="date" value={form.eta} onChange={(e) => setForm({ ...form, eta: e.target.value })} />
               </Field>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Field label="Size">
                 <Select value={form.size} onChange={(e) => setForm({ ...form, size: e.target.value })}>
                   {["20GP", "40GP", "40HQ", "40FR"].map((s) => <option key={s}>{s}</option>)}

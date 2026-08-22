@@ -14,14 +14,14 @@ export function PageHeader({
   action?: React.ReactNode;
 }) {
   return (
-    <div className="flex items-end justify-between px-8 pt-8 pb-6 border-b" style={{ borderColor: "var(--line)" }}>
+    <div className="flex flex-wrap items-end justify-between gap-3 px-4 md:px-8 pt-6 md:pt-8 pb-5 md:pb-6 border-b" style={{ borderColor: "var(--line)" }}>
       <div>
         {eyebrow && (
           <div className="font-mono text-[11px] tracking-widest uppercase mb-1" style={{ color: "var(--amber-deep)" }}>
             {eyebrow}
           </div>
         )}
-        <h1 className="font-display text-[26px] font-semibold tracking-tight" style={{ color: "var(--ink)" }}>
+        <h1 className="font-display text-[20px] md:text-[26px] font-semibold tracking-tight" style={{ color: "var(--ink)" }}>
           {title}
         </h1>
         {subtitle && (

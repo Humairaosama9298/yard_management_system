@@ -60,7 +60,7 @@ export default function Yard() {
   return (
     <div>
       <PageHeader eyebrow="Storage" title="Yard Slots" subtitle="Block/slot layout and container stacking assignment." />
-      <div className="p-8 space-y-6">
+      <div className="p-4 md:p-8 space-y-6">
         <Card className="p-4">
           <Field label="Yard">
             <Select value={yardId} onChange={(e) => setYardId(e.target.value)} className="max-w-xs">
@@ -69,7 +69,7 @@ export default function Yard() {
           </Field>
         </Card>
 
-        <div className="grid grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <Card className="p-5 h-fit space-y-6">
             <div>
               <h3 className="font-display font-semibold text-[14px] mb-4">Add Slot</h3>
@@ -107,7 +107,7 @@ export default function Yard() {
             <div className="px-5 py-4 border-b" style={{ borderColor: "var(--line)" }}>
               <h3 className="font-display font-semibold text-[14px]">Slot Map</h3>
             </div>
-            <div className="p-5 grid grid-cols-6 gap-3">
+            <div className="p-5 grid grid-cols-3 md:grid-cols-6 gap-3">
               {slots.map((s) => (
                 <div
                   key={s.id}

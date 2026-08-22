@@ -50,7 +50,7 @@ export default function BlockContainer() {
   return (
     <div>
       <PageHeader eyebrow="Hold Control" title="Block Container" subtitle="Hold containers or lines from receive/deliver with a reason." />
-      <div className="p-8 grid grid-cols-3 gap-6">
+      <div className="p-4 md:p-8 grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card className="p-5 h-fit">
           <h3 className="font-display font-semibold text-[14px] mb-4">New Hold</h3>
           <form onSubmit={handleSubmit} className="space-y-3">
@@ -77,7 +77,8 @@ export default function BlockContainer() {
         </Card>
 
         <Card className="col-span-2">
-          <table className="w-full text-sm">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
             <thead>
               <tr className="text-left border-b" style={{ borderColor: "var(--line)" }}>
                 {["Line", "Container", "Hold For", "Remarks", "Allowed"].map((h) => (
@@ -111,6 +112,7 @@ export default function BlockContainer() {
               )}
             </tbody>
           </table>
+            </div>
         </Card>
       </div>
     </div>

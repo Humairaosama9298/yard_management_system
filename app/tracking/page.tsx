@@ -42,7 +42,7 @@ export default function Tracking() {
   return (
     <div>
       <PageHeader eyebrow="Search" title="Tracking" subtitle="Look up a container or EIR to view its full event history." />
-      <div className="p-8 space-y-6">
+      <div className="p-4 md:p-8 space-y-6">
         <Card className="p-5">
           <form onSubmit={handleSearch} className="flex gap-3">
             <div className="flex-1 relative">
@@ -62,7 +62,8 @@ export default function Tracking() {
           <div className="px-5 py-4 border-b" style={{ borderColor: "var(--line)" }}>
             <h3 className="font-display font-semibold text-[14px]">Event Details</h3>
           </div>
-          <table className="w-full text-sm">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
             <thead>
               <tr className="text-left border-b" style={{ borderColor: "var(--line)" }}>
                 {["EIR No", "Mode", "Container", "Size", "Vessel/Voy", "Yard", "Terminal", "Status", "Truck", "Date", "Receipt"].map((h) => (
@@ -107,6 +108,7 @@ export default function Tracking() {
               )}
             </tbody>
           </table>
+            </div>
         </Card>
       </div>
     </div>

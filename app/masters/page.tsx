@@ -80,7 +80,7 @@ export default function Masters() {
   return (
     <div>
       <PageHeader eyebrow="Setup" title="Masters" subtitle="Shipping lines, consignees, transporters, terminals and yards." />
-      <div className="p-8 space-y-6">
+      <div className="p-4 md:p-8 space-y-6">
         <div className="flex gap-1 border-b" style={{ borderColor: "var(--line)" }}>
           {tabs.map((t) => (
             <button
@@ -98,7 +98,7 @@ export default function Masters() {
         </div>
 
         {tab === "companies" && (
-          <div className="grid grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <Card className="p-5 h-fit">
               <h3 className="font-display font-semibold text-[14px] mb-4">Add Company</h3>
               <form onSubmit={addCompany} className="space-y-3">
@@ -119,7 +119,8 @@ export default function Masters() {
               </form>
             </Card>
             <Card className="col-span-2">
-              <table className="w-full text-sm">
+              <div className="overflow-x-auto">
+            <table className="w-full text-sm">
                 <thead>
                   <tr className="text-left border-b" style={{ borderColor: "var(--line)" }}>
                     <th className="px-5 py-2.5 font-mono text-[11px] uppercase tracking-wide" style={{ color: "var(--slate)" }}>Name</th>
@@ -140,12 +141,13 @@ export default function Masters() {
                   )}
                 </tbody>
               </table>
+            </div>
             </Card>
           </div>
         )}
 
         {tab === "terminals" && (
-          <div className="grid grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <Card className="p-5 h-fit">
               <h3 className="font-display font-semibold text-[14px] mb-4">Add Terminal</h3>
               <form onSubmit={addTerminal} className="space-y-3">
@@ -156,7 +158,8 @@ export default function Masters() {
               </form>
             </Card>
             <Card className="col-span-2">
-              <table className="w-full text-sm">
+              <div className="overflow-x-auto">
+            <table className="w-full text-sm">
                 <tbody>
                   {terminals.map((t) => (
                     <tr key={t.id} className="border-b last:border-0" style={{ borderColor: "var(--line)" }}>
@@ -168,12 +171,13 @@ export default function Masters() {
                   )}
                 </tbody>
               </table>
+            </div>
             </Card>
           </div>
         )}
 
         {tab === "yards" && (
-          <div className="grid grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <Card className="p-5 h-fit">
               <h3 className="font-display font-semibold text-[14px] mb-4">Add Yard</h3>
               <form onSubmit={addYard} className="space-y-3">
@@ -184,7 +188,8 @@ export default function Masters() {
               </form>
             </Card>
             <Card className="col-span-2">
-              <table className="w-full text-sm">
+              <div className="overflow-x-auto">
+            <table className="w-full text-sm">
                 <tbody>
                   {yards.map((y) => (
                     <tr key={y.id} className="border-b last:border-0" style={{ borderColor: "var(--line)" }}>
@@ -196,6 +201,7 @@ export default function Masters() {
                   )}
                 </tbody>
               </table>
+            </div>
             </Card>
           </div>
         )}

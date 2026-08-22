@@ -97,7 +97,7 @@ export default function GateOut() {
   return (
     <div>
       <PageHeader eyebrow="Gate Operations" title="Empty Container Gate-Out" subtitle="Release containers from yard for dispatch." />
-      <div className="p-8 grid grid-cols-3 gap-6">
+      <div className="p-4 md:p-8 grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card className="col-span-2 p-6">
           {message && (
             <div
@@ -120,7 +120,7 @@ export default function GateOut() {
               </Select>
             </Field>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Field label="Yard Name" required>
                 <Select value={form.yard_id} onChange={(e) => setForm({ ...form, yard_id: e.target.value })}>
                   <option value="">Select yard</option>
@@ -135,7 +135,7 @@ export default function GateOut() {
               </Field>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Field label="Shipper">
                 <Select value={form.shipper_id} onChange={(e) => setForm({ ...form, shipper_id: e.target.value })}>
                   <option value="">Select shipper</option>
@@ -150,7 +150,7 @@ export default function GateOut() {
               </Field>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Field label="Truck No">
                 <Input value={form.truck_no} onChange={(e) => setForm({ ...form, truck_no: e.target.value })} placeholder="TLR465" />
               </Field>

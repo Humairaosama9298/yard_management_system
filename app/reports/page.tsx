@@ -42,8 +42,8 @@ export default function Reports() {
   return (
     <div>
       <PageHeader eyebrow="Insights" title="Stock Reports" subtitle="Size-wise yard stock, damage and dispatch summary." />
-      <div className="p-8 space-y-8">
-        <div className="grid grid-cols-4 gap-4">
+      <div className="p-4 md:p-8 space-y-8">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <StatTile label="Total Containers" value={totals.total} />
           <StatTile label="In Yard" value={totals.inYard} accent />
           <StatTile label="Dispatched" value={totals.dispatched} />
@@ -54,7 +54,8 @@ export default function Reports() {
           <div className="px-5 py-4 border-b" style={{ borderColor: "var(--line)" }}>
             <h3 className="font-display font-semibold text-[14px]">Stock by Size</h3>
           </div>
-          <table className="w-full text-sm">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
             <thead>
               <tr className="text-left border-b" style={{ borderColor: "var(--line)" }}>
                 {["Size", "Total", "In Yard", "Dispatched", "Damaged"].map((h) => (
@@ -77,6 +78,7 @@ export default function Reports() {
               )}
             </tbody>
           </table>
+            </div>
         </Card>
       </div>
     </div>

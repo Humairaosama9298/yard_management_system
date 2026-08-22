@@ -165,7 +165,7 @@ export default function GateIn() {
   return (
     <div>
       <PageHeader eyebrow="Gate Operations" title="Container Gate-In" subtitle="Record arrival, condition and yard assignment." />
-      <div className="p-8 grid grid-cols-3 gap-6">
+      <div className="p-4 md:p-8 grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card className="col-span-2 p-6">
           {message && (
             <div
@@ -179,7 +179,7 @@ export default function GateIn() {
             </div>
           )}
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Field label="Container No" required>
                 <Input value={form.container_no} onChange={(e) => setForm({ ...form, container_no: e.target.value })} placeholder="OOCU6160542" />
               </Field>
@@ -190,7 +190,7 @@ export default function GateIn() {
               </Field>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Field label="Line Name" required>
                 <Select value={form.line_id} onChange={(e) => setForm({ ...form, line_id: e.target.value })}>
                   <option value="">Select line</option>
@@ -205,7 +205,7 @@ export default function GateIn() {
               </Field>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Field label="Yard Name" required>
                 <Select value={form.yard_id} onChange={(e) => setForm({ ...form, yard_id: e.target.value })}>
                   <option value="">Select yard</option>
@@ -220,7 +220,7 @@ export default function GateIn() {
               </Field>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Field label="Vessel Name">
                 <Input value={form.vessel_name} onChange={(e) => setForm({ ...form, vessel_name: e.target.value })} placeholder="ITAL UNIVERSO" />
               </Field>
@@ -229,7 +229,7 @@ export default function GateIn() {
               </Field>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Field label="Consignee">
                 <Select value={form.consignee_id} onChange={(e) => setForm({ ...form, consignee_id: e.target.value })}>
                   <option value="">Select consignee</option>
@@ -244,7 +244,7 @@ export default function GateIn() {
               </Field>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Field label="Clearing Agent">
                 <Select value={form.clearing_agent_id} onChange={(e) => setForm({ ...form, clearing_agent_id: e.target.value })}>
                   <option value="">Select clearing agent</option>
@@ -256,7 +256,7 @@ export default function GateIn() {
               </Field>
             </div>
 
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <Field label="Tare Weight">
                 <Input type="number" value={form.tare_weight} onChange={(e) => setForm({ ...form, tare_weight: e.target.value })} placeholder="32500" />
               </Field>

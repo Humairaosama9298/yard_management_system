@@ -39,8 +39,8 @@ export default function Dashboard() {
         title="Yard Dashboard"
         subtitle="Live snapshot of depot activity across gate, stock and survey."
       />
-      <div className="p-8 space-y-8">
-        <div className="grid grid-cols-4 gap-4">
+      <div className="p-4 md:p-8 space-y-8">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <StatTile label="Containers Tracked" value={containers.length} />
           <StatTile label="Currently In-Yard" value={inYard} accent />
           <StatTile label="Damaged Units" value={damaged} />
@@ -54,7 +54,8 @@ export default function Dashboard() {
               View all →
             </a>
           </div>
-          <table className="w-full text-sm">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
             <thead>
               <tr className="text-left border-b" style={{ borderColor: "var(--line)" }}>
                 {["Container No", "Size", "Condition", "State", "Added"].map((h) => (
@@ -96,6 +97,7 @@ export default function Dashboard() {
               ))}
             </tbody>
           </table>
+            </div>
         </Card>
       </div>
     </div>

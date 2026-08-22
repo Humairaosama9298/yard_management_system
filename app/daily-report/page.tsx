@@ -54,9 +54,9 @@ export default function DailyReport() {
   return (
     <div>
       <PageHeader eyebrow="Line Communication" title="Daily Report — For Shipping Line" subtitle="Generate the final movement report to send to a shipping line." />
-      <div className="p-8 space-y-6">
+      <div className="p-4 md:p-8 space-y-6">
         <Card className="p-5 no-print">
-          <form onSubmit={handleGenerate} className="grid grid-cols-4 gap-4 items-end">
+          <form onSubmit={handleGenerate} className="grid grid-cols-2 md:grid-cols-4 gap-4 items-end">
             <Field label="Shipping Line" required>
               <Select value={lineId} onChange={(e) => setLineId(e.target.value)}>
                 <option value="">Select line</option>
@@ -93,7 +93,7 @@ export default function DailyReport() {
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-4 mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
               <div className="text-center rounded-md py-3" style={{ background: "#e6f3ec" }}>
                 <div className="text-[20px] font-semibold" style={{ color: "var(--ok)" }}>{gateIn}</div>
                 <div className="text-[11px] font-mono uppercase" style={{ color: "var(--slate)" }}>Gate-In</div>
@@ -108,6 +108,7 @@ export default function DailyReport() {
               </div>
             </div>
 
+            <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-left border-b" style={{ borderColor: "var(--line)" }}>
@@ -137,6 +138,7 @@ export default function DailyReport() {
                 )}
               </tbody>
             </table>
+            </div>
           </Card>
         )}
       </div>
