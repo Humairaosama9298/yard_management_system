@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase";
 import {
   LayoutDashboard,
   LogIn,
@@ -15,6 +17,7 @@ import {
   Anchor,
   PenSquare,
   FileText,
+  LogOut as SignOutIcon,
 } from "lucide-react";
 
 const NAV = [
@@ -33,6 +36,20 @@ const NAV = [
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
+  const [userLabel, setUserLabel] = useState("");
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      const meta = data.user?.user_metadata as any;
+      setUserLabel(meta?.full_name || data.user?.email || "");
+    });
+  }, []);
+
+  async function handleLogout() {
+    await supabase.auth.signOut();
+    router.replace("/login");
+  }
 
   return (
     <aside
@@ -66,8 +83,21 @@ export default function Sidebar() {
           );
         })}
       </nav>
-      <div className="px-6 py-4 text-[11px] opacity-40 font-mono border-t" style={{ borderColor: "rgba(255,255,255,0.08)" }}>
-        v1.0 — Off-Dock Depot
+      <div className="px-4 py-4 border-t" style={{ borderColor: "rgba(255,255,255,0.08)" }}>
+        {userLabel && (
+          <div className="px-2 mb-2 text-[12px] font-medium truncate" style={{ color: "var(--mist)" }}>
+            {userLabel}
+          </div>
+        )}
+        <button
+          onClick={handleLogout}
+          className="w-full flex items-center gap-2 px-2 py-2 rounded-md text-[13px] font-medium transition-colors"
+          style={{ color: "var(--mist)", opacity: 0.75 }}
+        >
+          <SignOutIcon size={15} />
+          Log Out
+        </button>
+        <div className="text-[11px] opacity-40 font-mono tracking-wide mt-1 px-2">v1.0 — Off-Dock Depot</div>
       </div>
     </aside>
   );
